@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 func main() {
 	var a int
@@ -16,6 +19,14 @@ func main() {
 
 	const g int32 = 5
 	fmt.Println("g is", g)
+
+	nan := math.NaN()
+	fmt.Println(nan, math.IsNaN(nan))
+
+	inf := math.Inf(+1)
+	negInf := math.Inf(-1)
+	fmt.Println(inf, negInf, math.IsInf(inf, +1), math.IsInf(negInf, +1),
+		math.IsInf(inf, -1), math.IsInf(negInf, -1))
 }
 
 func twoDivisions(a, b int) (c int, d float32) {
