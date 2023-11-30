@@ -13,6 +13,9 @@ func main() {
 	e, f := twoDivisions(b, c)
 	fmt.Println("e is", e)
 	fmt.Println("f is", f)
+
+	const g int32 = 5
+	fmt.Println("g is", g)
 }
 
 func twoDivisions(a, b int) (c int, d float32) {
