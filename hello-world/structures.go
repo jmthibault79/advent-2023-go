@@ -33,4 +33,20 @@ func main() {
 
 	notEmptySlice := append(emptySlice, 1)
 	fmt.Println(notEmptySlice, len(notEmptySlice))
+
+	// append takes varargs, so you need to "unpack" the slice to use it here
+	notEmptySlice = append(notEmptySlice, aSlice...)
+	fmt.Println(notEmptySlice, len(notEmptySlice))
+
+	notEmptySlice = append(notEmptySlice, []int{7, 8, 9}...)
+	fmt.Println(notEmptySlice, len(notEmptySlice))
+
+	// maps are dynamic and by-reference too
+	map1 := map[string]int{"three": 3, "four": 4}
+	map1["one"] = 1
+	fmt.Println(map1, len(map1))
+
+	map2 := map1
+	map2["FOO"] = 999
+	fmt.Println(map1, len(map1))
 }
