@@ -24,6 +24,8 @@ a newline`
 	filePtr, err := os.Create("output.txt")
 	fmt.Println("file pointer", filePtr)
 	fmt.Println("error", err)
+	followed := *filePtr
+	fmt.Println("followed file", followed)
 
 	bytesWritten, err := fmt.Fprint(filePtr, "Joel wrote this")
 	fmt.Println("bytes written", bytesWritten)
