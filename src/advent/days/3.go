@@ -11,11 +11,11 @@ import (
 type Symbol struct {
 	value string
 	row   int
-	pos   int
+	col   int
 }
 
 func (s Symbol) String() string {
-	return fmt.Sprintf("%s -> [%d, %d]", s.value, s.row, s.pos)
+	return fmt.Sprintf("%s -> [%d, %d]", s.value, s.row, s.col)
 }
 
 type Part struct {
@@ -68,7 +68,7 @@ func parseLine(rowIdx int, line string) (s []Symbol, p []Part) {
 
 			// case: a symbol
 			if char != '.' {
-				s = append(s, Symbol{value: string(char), row: rowIdx, pos: colIdx})
+				s = append(s, Symbol{value: string(char), row: rowIdx, col: colIdx})
 			}
 		}
 	}
@@ -105,6 +105,7 @@ func symbolAdjacent(part Part, symbolMap map[int]map[int]Symbol, lastRow, lastCo
 	return false, Symbol{}
 }
 
+// make a 2D map of [row, col] -> symbol for all symbols
 func makeSymbolMap(symbols []Symbol) (out map[int]map[int]Symbol) {
 	out = make(map[int]map[int]Symbol)
 	for _, s := range symbols {
@@ -112,7 +113,7 @@ func makeSymbolMap(symbols []Symbol) (out map[int]map[int]Symbol) {
 		if mapRow == nil {
 			out[s.row] = make(map[int]Symbol)
 		}
-		out[s.row][s.pos] = s
+		out[s.row][s.col] = s
 	}
 	return
 }
@@ -132,6 +133,61 @@ func day3part1(symbols []Symbol, parts []Part, lastRow, lastCol int) int {
 	}
 
 	return adjacentPartsSum
+}
+
+// make a map of row -> [parts in row] for all parts
+func makePartMap(parts []Part) (out map[int][]Part) {
+	out = make(map[int][]Part)
+	for _, p := range parts {
+		out[p.row] = append(out[p.row], p)
+	}
+	return
+}
+
+func gearRatio(symbol Symbol, partMap map[int][]Part) int {
+	// define the search space: from row before to row after
+	// don't need to clamp because there are no gears in the first or last row or column
+	rowStart := symbol.row - 1
+	rowEnd := symbol.row + 1
+	colStart := symbol.col - 1
+	colEnd := symbol.col + 1
+
+	var adjParts []Part
+	for row := rowStart; row <= rowEnd; row++ {
+		parts := partMap[row]
+		for _, part := range parts {
+			// overlap test: if the two ranges are disjoint, they do not overlap
+			// can do this comparison in either direction
+			disjoint := (part.end < colStart) || (part.start > colEnd)
+			if !disjoint {
+				adjParts = append(adjParts, part)
+			}
+		}
+	}
+
+	// exactly 2!
+	if len(adjParts) == 2 {
+		ratio := adjParts[0].value * adjParts[1].value
+		fmt.Println(symbol, "is a gear with ratio", adjParts[0].value, "x", adjParts[1].value, ratio)
+		return ratio
+	} else {
+		return 0
+	}
+}
+
+const gearSymbol = "*"
+
+func day3part2(symbols []Symbol, parts []Part) (sum int) {
+	partMap := makePartMap(parts)
+	//fmt.Println(partMap)
+
+	for _, s := range symbols {
+		if s.value == gearSymbol {
+			sum += gearRatio(s, partMap)
+		}
+	}
+
+	return sum
 }
 
 func main() {
@@ -170,6 +226,19 @@ func main() {
 	}
 
 	// for Part 1, which parts are adjacent to symbols?  add them.
+
+	// approach: make a 2D map of symbols. for each part, search its bounding box for a symbol
+
 	result := day3part1(symbols, parts, len(lines)-1, len(lines[0])-1)
 	fmt.Println("Part1", result)
+
+	// Part 2: we only care about GEARS which are * symbols which are adjacent to exactly 2 parts
+	// a GEAR RATIO is the multiplication of those 2 parts.  Add these up.
+
+	// stats: ~400 * in ~140 lines - but not the first and last lines, so I don't need to account for these
+
+	// approach: make a map of line -> parts on that line.  for each * symbol, check -1 to +1 for 2 parts
+
+	result = day3part2(symbols, parts)
+	fmt.Println("Part2", result)
 }
