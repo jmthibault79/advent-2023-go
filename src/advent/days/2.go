@@ -49,6 +49,8 @@ type Game struct {
 	id      int
 	draws   []Draw
 	atLeast Draw
+	// new for part 2
+	power int
 }
 
 func (g Game) String() string {
@@ -86,7 +88,9 @@ func parseGame(line string) Game {
 	}
 
 	return Game{id: gameId, draws: draws,
-		atLeast: Draw{redCount: atLeastR, greenCount: atLeastG, blueCount: atLeastB}}
+		atLeast: Draw{redCount: atLeastR, greenCount: atLeastG, blueCount: atLeastB},
+		// new for part 2
+		power: atLeastR * atLeastG * atLeastB}
 }
 
 func part1(lines []string, redCount, greenCount, blueCount int) int {
@@ -101,6 +105,17 @@ func part1(lines []string, redCount, greenCount, blueCount int) int {
 			//fmt.Printf("Game %d Possible\n", game.id)
 			acc += game.id
 		}
+	}
+
+	return acc
+}
+
+func part2(lines []string) int {
+	acc := 0
+
+	for _, line := range lines {
+		game := parseGame(line)
+		acc += game.power
 	}
 
 	return acc
@@ -131,5 +146,10 @@ func main() {
 
 	// for Part 1, what is the sum of the games that are possible w/ 12 red, 13 green, 14 blue?
 	result := part1(lines, 12, 13, 14)
-	fmt.Println(result)
+	fmt.Println("Part1", result)
+
+	// Part 2 - find the minimum possible # of each cube for each Game ... which I did already!  yay
+	// the Power of a Game is minR * minG * minB.  Add these.
+	result = part2(lines)
+	fmt.Println("Part2", result)
 }
