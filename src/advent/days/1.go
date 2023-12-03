@@ -105,7 +105,7 @@ func main() {
 	// plan per line:
 	// parse digits from string
 	// keep first and last
-	// convert to 2-digit id
+	// convert to 2-digit num
 
 	// final plan: sum lines
 
