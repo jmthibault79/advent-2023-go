@@ -90,6 +90,39 @@ func day4part1(lines []string) int {
 	return acc
 }
 
+type CardAndCount struct {
+	card  Card
+	count int
+}
+
+func day4part2(lines []string) int {
+	// keeps track of the hand of cards and also the final score
+	cardsAndCounts := make(map[int]CardAndCount)
+
+	// parse and count the originals
+	for idx, line := range lines {
+		card := parseCard(line)
+		cardsAndCounts[idx] = CardAndCount{card: card, count: 1}
+	}
+
+	// score and multiply
+	acc := 0
+	for idx := 0; idx < len(lines); idx++ {
+		cc := cardsAndCounts[idx]
+		acc += cc.count
+		matches := cc.card.matches()
+		// add `count` copies of each of the cards corresponding to `matches`
+		for copyIdx := idx + 1; copyIdx < len(lines) && copyIdx <= idx+matches; copyIdx++ {
+			cardsAndCounts[copyIdx] = CardAndCount{
+				card:  cardsAndCounts[copyIdx].card,
+				count: cardsAndCounts[copyIdx].count + cc.count,
+			}
+		}
+	}
+
+	return acc
+}
+
 func main() {
 	inputFile := "../../inputs/input4.txt"
 	lines := util.ReadLines(inputFile)
@@ -101,4 +134,11 @@ func main() {
 	result := day4part1(lines)
 	fmt.Println("Part1", result)
 
+	// Part 2 keeps the same idea of matches, but what you win is more cards
+	// if card N has 3 matches, you win an extra copy of N+1, N+2, N+3
+	// so: when it comes time to score N+1, you do it twice, and so on.
+	// How many CARDS do you have, originals and copies?
+
+	result = day4part2(lines)
+	fmt.Println("Part2", result)
 }
