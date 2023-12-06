@@ -113,9 +113,10 @@ func day4part2(lines []string) int {
 		matches := cc.card.matches()
 		// add `count` copies of each of the cards corresponding to `matches`
 		for copyIdx := idx + 1; copyIdx < len(lines) && copyIdx <= idx+matches; copyIdx++ {
+			copied := cardsAndCounts[copyIdx]
 			cardsAndCounts[copyIdx] = CardAndCount{
-				card:  cardsAndCounts[copyIdx].card,
-				count: cardsAndCounts[copyIdx].count + cc.count,
+				card:  copied.card,
+				count: copied.count + cc.count,
 			}
 		}
 	}
