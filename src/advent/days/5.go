@@ -130,14 +130,15 @@ func day5part2(lines []string) int {
 	util.MaybePanic(err)
 	fmt.Println("Seeds", part1Seeds)
 
-	var seeds []int
+	// preallocate 3.1B seeds !
+	seeds := make([]int, 0, 3_100_000_000)
 	for seedIdx := 0; seedIdx < len(part1Seeds); seedIdx += 2 {
 		start := part1Seeds[seedIdx]
 		rl := part1Seeds[seedIdx+1]
 		for newSeedIdx := start; newSeedIdx < start+rl; newSeedIdx++ {
 			seeds = append(seeds, newSeedIdx)
 			if len(seeds)%1_000_000_000 == 0 {
-				fmt.Println("Produced a billion seeds")
+				fmt.Println("Produced seeds:", len(seeds))
 			}
 		}
 	}
@@ -150,13 +151,12 @@ func day5part2(lines []string) int {
 
 	fmt.Println("Seed count", len(seeds))
 	for idx, seed := range seeds {
-		val := seed
 		for _, m := range maps {
-			val = m.convert(val)
+			seed = m.convert(seed)
 		}
-		lowest = min(lowest, val)
-		if idx%1_000_000_000 == 0 {
-			fmt.Println("Processed a billion seeds")
+		lowest = min(lowest, seed)
+		if idx%1_00_000_000 == 0 {
+			fmt.Println("Processed seeds:", idx)
 		}
 	}
 
