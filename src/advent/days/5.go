@@ -3,6 +3,7 @@ package main
 import (
 	"advent/util"
 	"fmt"
+	m "math"
 	"strings"
 )
 
@@ -24,12 +25,12 @@ func tryParseMapHeader(maybeHeaderLine string) (from, to string, success bool) {
 	return secondSplit[0], secondSplit[2], true
 }
 
-func tryParseMapRow(maybeRowLine string) (srcStart, destStart, rangeLength int, success bool) {
+func tryParseMapRow(maybeRowLine string) ([]int, bool) {
 	vals, err := util.ParseSpacedInts(maybeRowLine)
 	if err != nil || len(vals) != 3 {
-		return 0, 0, 0, false
+		return nil, false
 	} else {
-		return vals[0], vals[1], vals[2], true
+		return vals, true
 	}
 }
 
@@ -50,6 +51,22 @@ func (m ConversionMap) String() string {
 	return out.String()
 }
 
+func (m ConversionMap) convert(in int) int {
+	for _, row := range m.values {
+		// let's follow along with this nonsense by using an example: ds = 10, ss = 20, rl = 30
+		// input matches are therefore 20-49, and should be mapped to 10-39
+		destStart, srcStart, rangeLength := row[0], row[1], row[2]
+		// for matches, this value would be in the range [0, 29]
+		deltaFromStart := in - srcStart
+		if deltaFromStart >= 0 && deltaFromStart < rangeLength {
+			// so matching outputs are in the range [10, 39]
+			return destStart + deltaFromStart
+		}
+	}
+	// no matches: return original
+	return in
+}
+
 func day5part1(lines []string) int {
 	seeds, err := parseSeeds(lines[0])
 	util.MaybePanic(err)
@@ -64,9 +81,9 @@ func day5part1(lines []string) int {
 	// skip blank line 1
 	for _, line := range lines[2:] {
 		if inMap {
-			srcStart, destStart, rangeLength, success := tryParseMapRow(line)
+			row, success := tryParseMapRow(line)
 			if success {
-				rowValues = append(rowValues, []int{srcStart, destStart, rangeLength})
+				rowValues = append(rowValues, row)
 			} else {
 				// complete the map
 				maps = append(maps, ConversionMap{fromType: from, toType: to, values: rowValues})
@@ -89,11 +106,24 @@ func day5part1(lines []string) int {
 		fmt.Println(m)
 	}
 
-	return 0
+	lowest := m.MaxInt
+
+	for _, seed := range seeds {
+		fmt.Print("seed ", seed)
+		val := seed
+		for _, m := range maps {
+			val = m.convert(val)
+			fmt.Print(" -> ", m.toType, " ", val)
+		}
+		fmt.Println()
+		lowest = min(lowest, val)
+	}
+
+	return lowest
 }
 
 func main() {
-	inputFile := "../../inputs/test5.txt"
+	inputFile := "../../inputs/input5.txt"
 	lines := util.ReadLines(inputFile)
 
 	// ok wow day 5 is special
