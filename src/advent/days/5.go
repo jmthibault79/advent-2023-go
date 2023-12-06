@@ -3,7 +3,7 @@ package main
 import (
 	"advent/util"
 	"fmt"
-	m "math"
+	"math"
 	"strings"
 )
 
@@ -72,14 +72,31 @@ func day5part1(lines []string) int {
 	util.MaybePanic(err)
 	fmt.Println("Seeds", seeds)
 
-	var maps []ConversionMap
+	// skip blank line 1
+	maps := parseMaps(lines[2:])
 
+	lowest := math.MaxInt
+
+	for _, seed := range seeds {
+		fmt.Print("seed ", seed)
+		val := seed
+		for _, m := range maps {
+			val = m.convert(val)
+			fmt.Print(" -> ", m.toType, " ", val)
+		}
+		fmt.Println()
+		lowest = min(lowest, val)
+	}
+
+	return lowest
+}
+
+func parseMaps(mapLines []string) (maps []ConversionMap) {
 	// map builder values
 	rowValues := make([][]int, 0)
 	inMap, from, to := false, "", ""
 
-	// skip blank line 1
-	for _, line := range lines[2:] {
+	for _, line := range mapLines {
 		if inMap {
 			row, success := tryParseMapRow(line)
 			if success {
@@ -105,18 +122,42 @@ func day5part1(lines []string) int {
 	for _, m := range maps {
 		fmt.Println(m)
 	}
+	return maps
+}
 
-	lowest := m.MaxInt
+func day5part2(lines []string) int {
+	part1Seeds, err := parseSeeds(lines[0])
+	util.MaybePanic(err)
+	fmt.Println("Seeds", part1Seeds)
 
-	for _, seed := range seeds {
-		fmt.Print("seed ", seed)
+	var seeds []int
+	for seedIdx := 0; seedIdx < len(part1Seeds); seedIdx += 2 {
+		start := part1Seeds[seedIdx]
+		rl := part1Seeds[seedIdx+1]
+		for newSeedIdx := start; newSeedIdx < start+rl; newSeedIdx++ {
+			seeds = append(seeds, newSeedIdx)
+			if len(seeds)%1_000_000_000 == 0 {
+				fmt.Println("Produced a billion seeds")
+			}
+		}
+	}
+	fmt.Println("New Seed Count", len(seeds))
+
+	// skip blank line 1
+	maps := parseMaps(lines[2:])
+
+	lowest := math.MaxInt
+
+	fmt.Println("Seed count", len(seeds))
+	for idx, seed := range seeds {
 		val := seed
 		for _, m := range maps {
 			val = m.convert(val)
-			fmt.Print(" -> ", m.toType, " ", val)
 		}
-		fmt.Println()
 		lowest = min(lowest, val)
+		if idx%1_000_000_000 == 0 {
+			fmt.Println("Processed a billion seeds")
+		}
 	}
 
 	return lowest
@@ -132,4 +173,7 @@ func main() {
 	result := day5part1(lines)
 	fmt.Println("Part1", result)
 
+	// part 2: now the seeds are ranges
+	result = day5part2(lines)
+	fmt.Println("Part2", result)
 }
