@@ -3,6 +3,7 @@ package main
 import (
 	"advent/util"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -33,15 +34,7 @@ func countWinners(time, record int) (winners int) {
 	return winners
 }
 
-func day6part1(lines []string) int {
-	times, err := util.ParseSpacedInts(strings.Split(lines[0], ":")[1])
-	util.MaybePanic(err)
-	fmt.Println("Times", times)
-
-	records, err := util.ParseSpacedInts(strings.Split(lines[1], ":")[1])
-	util.MaybePanic(err)
-	fmt.Println("Records", records)
-
+func countAllWinners(times, records []int) int {
 	winnerAcc := 1
 	for idx, time := range times {
 		record := records[idx]
@@ -51,6 +44,31 @@ func day6part1(lines []string) int {
 	}
 
 	return winnerAcc
+}
+
+func day6part1(lines []string) int {
+	times, err := util.ParseSpacedInts(strings.Split(lines[0], ":")[1])
+	util.MaybePanic(err)
+	fmt.Println("Times", times)
+
+	records, err := util.ParseSpacedInts(strings.Split(lines[1], ":")[1])
+	util.MaybePanic(err)
+	fmt.Println("Records", records)
+
+	return countAllWinners(times, records)
+}
+
+func day6part2(lines []string) int {
+
+	time, err := strconv.Atoi(strings.Replace(strings.Split(lines[0], ":")[1], " ", "", -1))
+	util.MaybePanic(err)
+	fmt.Println("Time", time)
+
+	record, err := strconv.Atoi(strings.Replace(strings.Split(lines[1], ":")[1], " ", "", -1))
+	util.MaybePanic(err)
+	fmt.Println("Record", record)
+
+	return countWinners(time, record)
 }
 
 func main() {
@@ -69,4 +87,8 @@ func main() {
 	result := day6part1(lines)
 	fmt.Println("Part1", result)
 
+	// lol the kerning was off so actually we want to smash all the numbers together
+
+	result = day6part2(lines)
+	fmt.Println("Part2", result)
 }
