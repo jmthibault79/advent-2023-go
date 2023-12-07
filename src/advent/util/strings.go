@@ -8,11 +8,13 @@ import (
 func ParseSpacedInts(line string) (out []int, err error) {
 	strVals := strings.Fields(line)
 	for _, sVal := range strVals {
-		iVal, err := strconv.Atoi(sVal)
-		if err != nil {
-			return nil, err
+		if sVal != " " {
+			iVal, err := strconv.Atoi(sVal)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, iVal)
 		}
-		out = append(out, iVal)
 	}
 	return out, nil
 }
