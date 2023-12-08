@@ -9,13 +9,8 @@ import (
 )
 
 const cardsInHand = 5
-
-type Hand struct {
-	cards       string
-	bid         int
-	handType    int
-	labelValues [cardsInHand]int
-}
+const jokerLabel = 'J'
+const jokerValue = 1
 
 const fiveOfAKind = 6
 const fourOfAKind = 5
@@ -24,43 +19,6 @@ const threeOfAKind = 3
 const twoPair = 2
 const onePair = 1
 const highCard = 0
-
-func handType(cards string) int {
-	typeMap := make(map[rune]int)
-	for _, char := range cards {
-		typeMap[char]++
-	}
-
-	highestCount := 0
-	var counts []int
-	for _, count := range typeMap {
-		counts = append(counts, count)
-		highestCount = max(count, highestCount)
-	}
-
-	switch highestCount {
-	case 5:
-		return fiveOfAKind
-	case 4:
-		return fourOfAKind
-	case 3:
-		if len(counts) == 2 {
-			// only possibly is a 3x and a 2x
-			return fullHouse
-		} else {
-			return threeOfAKind
-		}
-	case 2:
-		if len(counts) == 3 {
-			// only possibility is 2,2,1
-			return twoPair
-		} else {
-			return onePair
-		}
-	default:
-		return highCard
-	}
-}
 
 var labelValue = map[rune]int{
 	'A': 14,
@@ -78,26 +36,72 @@ var labelValue = map[rune]int{
 	'2': 2,
 }
 
-func newHand(handStr string, bid int) Hand {
-	var labelValues [cardsInHand]int
-	for idx, char := range handStr {
-		labelValues[idx] = labelValue[char]
-	}
-	return Hand{cards: handStr, bid: bid, handType: handType(handStr), labelValues: labelValues}
+type Hand struct {
+	cards       string
+	bid         int
+	handType    int
+	labelValues [cardsInHand]int
 }
 
-func (h Hand) worseHandThan(otherHand Hand) bool {
-	if h.handType == otherHand.handType {
-		for idx := 0; idx < cardsInHand; idx++ {
-			if h.labelValues[idx] != otherHand.labelValues[idx] {
-				return h.labelValues[idx] < otherHand.labelValues[idx]
-			}
-		}
-		// they're the same
-		return false
-	} else {
-		return h.handType < otherHand.handType
+func handType(cards string, part2 bool) int {
+	typeMap := make(map[rune]int)
+	for _, label := range cards {
+		typeMap[label]++
 	}
+
+	highestCount := 0
+	var jokerCount int
+	var counts []int
+	for label, count := range typeMap {
+		if part2 && label == jokerLabel {
+			jokerCount = count
+		} else {
+			counts = append(counts, count)
+			highestCount = max(count, highestCount)
+		}
+	}
+
+	switch highestCount + jokerCount {
+	case 5:
+		return fiveOfAKind
+	case 4:
+		return fourOfAKind
+	case 3:
+		if jokerCount == 0 || jokerCount == 1 {
+			// if no jokers, the counts are 3,2 or 3,1,1
+			// if 1 joker, the counts are 2,2 or 2,1,1
+			if len(counts) == 2 {
+				return fullHouse
+			} else {
+				return threeOfAKind
+			}
+		} else {
+			// if 2 jokers, the counts are 1,1,1
+			return threeOfAKind
+		}
+	case 2:
+		// if no jokers, the counts are 2,2,1 or 2,1,1,1
+		// if 1 joker, the counts are 1,1,1,1
+		if len(counts) == 3 {
+			return twoPair
+		} else {
+			return onePair
+		}
+	default:
+		return highCard
+	}
+}
+
+func newHand(handStr string, bid int, part2 bool) Hand {
+	var labelValues [cardsInHand]int
+	for idx, char := range handStr {
+		if part2 && char == jokerLabel {
+			labelValues[idx] = jokerValue
+		} else {
+			labelValues[idx] = labelValue[char]
+		}
+	}
+	return Hand{cards: handStr, bid: bid, handType: handType(handStr, part2), labelValues: labelValues}
 }
 
 type CamelGameComparator []Hand
@@ -120,18 +124,18 @@ func (c CamelGameComparator) Less(i, j int) bool {
 	return false
 }
 
-func parseHands(lines []string) (hands []Hand) {
+func parseHands(lines []string, part2 bool) (hands []Hand) {
 	for _, line := range lines {
 		splitLine := strings.Fields(line)
 		bid, err := strconv.Atoi(splitLine[1])
 		util.MaybePanic(err)
-		hands = append(hands, newHand(splitLine[0], bid))
+		hands = append(hands, newHand(splitLine[0], bid, part2))
 	}
 	return
 }
 
-func day7part1(lines []string) (acc int) {
-	hands := parseHands(lines)
+func day7(lines []string, part2 bool) (acc int) {
+	hands := parseHands(lines, part2)
 	sort.Sort(CamelGameComparator(hands))
 
 	for idx, hand := range hands {
@@ -144,6 +148,9 @@ func day7part1(lines []string) (acc int) {
 func main() {
 	lines := util.ReadInput("input", 7)
 
-	result := day7part1(lines)
+	result := day7(lines, false)
 	fmt.Println("Part1", result)
+
+	result = day7(lines, true)
+	fmt.Println("Part2", result)
 }
