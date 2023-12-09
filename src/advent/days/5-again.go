@@ -171,7 +171,7 @@ func main() {
 	// while I did complete Day 5 Part 2, it wasn't pretty
 	// let's see if I can do better
 
-	lines := util.ReadInput("input", 5)
+	lines := util.ReadInput("input", "5")
 
 	result := day5part2Again(lines)
 	fmt.Println("Part2 Again", result)

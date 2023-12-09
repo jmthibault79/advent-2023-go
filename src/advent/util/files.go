@@ -31,8 +31,8 @@ func ReadLines(filePath string) (lines []string) {
 	return
 }
 
-func ReadInput(kind string, day int) (lines []string) {
+func ReadInput(kind string, day string) (lines []string) {
 	dir := "../../inputs/"
-	filename := fmt.Sprintf("%s%d.txt", kind, day)
+	filename := fmt.Sprintf("%s%s.txt", kind, day)
 	return ReadLines(dir + filename)
 }
