@@ -146,7 +146,7 @@ func day7(lines []string, part2 bool) (acc int) {
 }
 
 func main() {
-	lines := util.ReadInput("input", 7)
+	lines := util.ReadInput("input", "7")
 
 	result := day7(lines, false)
 	fmt.Println("Part1", result)
