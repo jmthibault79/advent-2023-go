@@ -93,7 +93,12 @@ func nodeSliceComparator(a, b Node) int {
 
 func addGhostNode(gp GhostPath, gn GhostNode, direction string) (out GhostPath) {
 	cycle, winner := false, false
-	seen := gp.seen
+	// copy seen map - I think I was seeing same-reference problems otherwise
+	seen := make(map[GhostNode]int)
+	for k, v := range gp.seen {
+		seen[k] = v
+	}
+
 	if gn.allTarget() {
 		winner = true
 	} else if gp.seen[gn] > 0 {
