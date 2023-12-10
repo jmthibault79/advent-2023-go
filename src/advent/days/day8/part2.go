@@ -11,8 +11,6 @@ const lastCharPos = 2
 const startRune = 'A'
 const targetRune = 'Z'
 const leftChar = 'L'
-const leftBool = true
-const rightBool = false
 
 // empirical values from input
 const numGhosts = 2
@@ -55,24 +53,26 @@ func (gn GhostNode) right(m NodeMap) (out GhostNode) {
 	return
 }
 
+func (gn GhostNode) allTarget() bool {
+	for idx := 0; idx < numGhosts; idx++ {
+		if gn[idx].endsWith != targetRune {
+			return false
+		}
+	}
+	return true
+}
+
 type GhostPath struct {
-	start GhostNode
-	end   GhostNode
-	steps []bool
+	seen   map[GhostNode]int
+	start  GhostNode
+	end    GhostNode
+	steps  string
+	cycle  bool
+	winner bool
 }
 
 func (gp GhostPath) String() string {
-	var sb strings.Builder
-	for _, s := range gp.steps {
-		if s == leftBool {
-			sb.WriteString("L")
-		} else {
-			sb.WriteString("R")
-		}
-	}
-
-	return fmt.Sprintf("%s -> %s in %d steps:%s",
-		gp.start.String(), gp.end.String(), len(gp.steps), sb.String())
+	return fmt.Sprintf("%s -> %s in %d steps:%s", gp.start.String(), gp.end.String(), len(gp.steps), gp.steps)
 }
 
 // CCC = (ZZZ, GGG)
@@ -91,41 +91,41 @@ func nodeSliceComparator(a, b Node) int {
 	return cmp.Compare(a.id, b.id)
 }
 
-func addGhostNode(gp GhostPath, gn GhostNode, direction bool) (out GhostPath) {
-	return GhostPath{start: gp.start, end: gn, steps: append(gp.steps, direction)}
+func addGhostNode(gp GhostPath, gn GhostNode, direction string) (out GhostPath) {
+	cycle, winner := false, false
+	seen := gp.seen
+	if gn.allTarget() {
+		winner = true
+	} else if gp.seen[gn] > 0 {
+		cycle = true
+	} else {
+		seen[gn] = 1
+	}
+	return GhostPath{seen: seen, start: gp.start, end: gn, steps: gp.steps + direction, cycle: cycle, winner: winner}
 }
 
-func enumeratePaths(n NodeMap, start GhostNode) (out []GhostPath) {
-	seenNodes := make(map[GhostNode]int)
-
-	// init path queue with a path from start -> start with 0 steps
-	pathConsiderationQueue := []GhostPath{{start: start, end: start, steps: nil}}
+func enumeratePaths(n NodeMap, start GhostNode) (cycles, winners []GhostPath) {
+	// init path queue with path at the start with 0 steps
+	initSeen := make(map[GhostNode]int)
+	initSeen[start] = 1
+	pathConsiderationQueue := []GhostPath{{seen: initSeen, start: start, end: start}} //, steps: "", complete: false}}
 
 	// I don't want `range pathConsiderationQueue` here because I'm going to be expanding it
 	// so I want to check len() each time
 	for queueIdx := 0; queueIdx < len(pathConsiderationQueue); queueIdx++ {
 		currentPath := pathConsiderationQueue[queueIdx]
-		seenNodes[currentPath.end] = 1
+		leftPath := addGhostNode(currentPath, currentPath.end.left(n), "L")
+		rightPath := addGhostNode(currentPath, currentPath.end.right(n), "R")
 
-		leftNode := currentPath.end.left(n)
-		leftPath := addGhostNode(currentPath, leftNode, leftBool)
-
-		rightNode := currentPath.end.right(n)
-		rightPath := addGhostNode(currentPath, rightNode, rightBool)
-
-		// if we've seen this GhostNode before, then we've completed a path
-		// add this traversal to output
-		if seenNodes[leftNode] > 0 {
-			out = append(out, leftPath)
-		} else {
-			// add to queue
-			pathConsiderationQueue = append(pathConsiderationQueue, leftPath)
-		}
-
-		if seenNodes[rightNode] > 0 {
-			out = append(out, rightPath)
-		} else {
-			pathConsiderationQueue = append(pathConsiderationQueue, rightPath)
+		for _, p := range []GhostPath{leftPath, rightPath} {
+			if p.winner {
+				winners = append(winners, p)
+			} else if p.cycle {
+				cycles = append(cycles, p)
+			} else {
+				// add to queue
+				pathConsiderationQueue = append(pathConsiderationQueue, p)
+			}
 		}
 	}
 
@@ -155,8 +155,13 @@ func Part2(lines []string) int {
 	_, n, start := parseInput(lines)
 
 	// idea1: enumerate all of the possible outcomes (R, L, RR, RL, LR, LL, etc) and find the first that gets to all Z?
-	paths := enumeratePaths(n, start)
-	for _, p := range paths {
+	cycles, winners := enumeratePaths(n, start)
+	fmt.Println("Winners")
+	for _, p := range winners {
+		fmt.Println(p)
+	}
+	fmt.Println("Cycles")
+	for _, p := range cycles {
 		fmt.Println(p)
 	}
 
