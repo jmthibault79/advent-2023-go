@@ -1,7 +1,6 @@
 package day8
 
 import (
-	"cmp"
 	"fmt"
 	"slices"
 	"strings"
@@ -74,24 +73,12 @@ type GhostPath struct {
 }
 
 func (gp GhostPath) String() string {
-	return fmt.Sprintf("%s -> %s in %d steps:%s", gp.start.String(), gp.end.String(), len(gp.steps), gp.steps)
+	return fmt.Sprintf("%s -> %s in %d steps: %s", gp.start.String(), gp.end.String(), len(gp.steps), gp.steps)
 }
 
-// CCC = (ZZZ, GGG)
-func parseNode(line string) Node {
-	split1 := strings.Split(line, "=")
-	id := strings.TrimSpace(split1[0])
-
-	split2 := strings.Split(split1[1], ",")
-
-	left := strings.TrimSpace(strings.Replace(split2[0], "(", "", 1))
-	right := strings.TrimSpace(strings.Replace(split2[1], ")", "", 1))
-	return Node{id: id, left: left, right: right, endsWith: rune(id[lastCharPos])}
-}
-
-func nodeSliceComparator(a, b Node) int {
-	return cmp.Compare(a.id, b.id)
-}
+//func nodeSliceComparator(a, b Node) int {
+//	return cmp.Compare(a.id, b.id)
+//}
 
 func addGhostNode(gp GhostPath, gn GhostNode, direction string, m NodeMap) (out GhostPath) {
 	cycle, winner := false, false
@@ -115,7 +102,7 @@ func enumeratePaths(m NodeMap, start GhostNode) (cycles, winners []GhostPath) {
 	// init path queue with path at the start with 0 steps
 	initSeen := make(map[GhostNode]int)
 	initSeen[start] = 1
-	pathConsiderationQueue := []GhostPath{{seen: initSeen, start: start, end: start}} //, steps: "", complete: false}}
+	pathConsiderationQueue := []GhostPath{{seen: initSeen, start: start, end: start}}
 
 	// I don't want `range pathConsiderationQueue` here because I'm going to be expanding it
 	// so I want to check len() each time
@@ -135,7 +122,7 @@ func enumeratePaths(m NodeMap, start GhostNode) (cycles, winners []GhostPath) {
 				fmt.Println("Winner", p)
 				winners = append(winners, p)
 			} else if p.cycle {
-				if len(cycles)%1000 == 0 {
+				if len(cycles)%100 == 0 {
 					fmt.Println("Cycles", len(cycles))
 				}
 				cycles = append(cycles, p)
@@ -147,6 +134,18 @@ func enumeratePaths(m NodeMap, start GhostNode) (cycles, winners []GhostPath) {
 	}
 
 	return
+}
+
+// CCC = (ZZZ, GGG)
+func parseNode(line string) Node {
+	split1 := strings.Split(line, "=")
+	id := strings.TrimSpace(split1[0])
+
+	split2 := strings.Split(split1[1], ",")
+
+	left := strings.TrimSpace(strings.Replace(split2[0], "(", "", 1))
+	right := strings.TrimSpace(strings.Replace(split2[1], ")", "", 1))
+	return Node{id: id, left: left, right: right, endsWith: rune(id[lastCharPos])}
 }
 
 func parseInput(lines []string) (moves []bool, m NodeMap, start GhostNode) {
@@ -178,11 +177,11 @@ func Part2(lines []string) int {
 	// idea3: include the history of "seen" nodes in a sequence so they can find cycles
 
 	cycles, winners := enumeratePaths(n, start)
-	fmt.Println("Winners (", len(winners), ")")
+	fmt.Println("Winners:", len(winners))
 	for _, p := range winners {
 		fmt.Println(p)
 	}
-	fmt.Println("Cycles (", len(cycles), ")")
+	fmt.Println("Cycles:", len(cycles))
 	//for _, p := range cycles {
 	//	fmt.Println(p)
 	//}
