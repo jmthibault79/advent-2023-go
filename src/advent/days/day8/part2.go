@@ -8,14 +8,14 @@ import (
 )
 
 const lastCharPos = 2
-const startCollectionRune = 'A'
-const targetCollectionRune = 'Z'
+const startRune = 'A'
+const targetRune = 'Z'
 const leftChar = 'L'
 const leftBool = true
 const rightBool = false
 
 // empirical values from input
-const nodesInCollection = 2
+const numGhosts = 2
 
 type Node struct {
 	id       string
@@ -23,7 +23,7 @@ type Node struct {
 	left     string
 	right    string
 }
-type GhostNode [nodesInCollection]Node
+type GhostNode [numGhosts]Node
 type NodeMap map[string]Node
 
 func (gn GhostNode) String() string {
@@ -36,7 +36,7 @@ func (gn GhostNode) String() string {
 }
 
 func (gn GhostNode) left(m NodeMap) (out GhostNode) {
-	lefts := make([]Node, 0, nodesInCollection)
+	lefts := make([]Node, 0, numGhosts)
 	for _, n := range gn {
 		lefts = append(lefts, m[n.left])
 	}
@@ -46,7 +46,7 @@ func (gn GhostNode) left(m NodeMap) (out GhostNode) {
 }
 
 func (gn GhostNode) right(m NodeMap) (out GhostNode) {
-	rights := make([]Node, 0, nodesInCollection)
+	rights := make([]Node, 0, numGhosts)
 	for _, n := range gn {
 		rights = append(rights, m[n.right])
 	}
@@ -96,69 +96,69 @@ func addGhostNode(gp GhostPath, gn GhostNode, direction bool) (out GhostPath) {
 }
 
 func enumeratePaths(n NodeMap, start GhostNode) (out []GhostPath) {
-	seenNodeCollections := make(map[GhostNode]int)
+	seenNodes := make(map[GhostNode]int)
 
-	// init traversal queue with the startNodes
-	traversalQueue := []GhostPath{{start: start, end: start, steps: nil}}
+	// init path queue with a path from start -> start with 0 steps
+	pathConsiderationQueue := []GhostPath{{start: start, end: start, steps: nil}}
 
-	// I don't want `range traversalQueue` here because I'm going to be expanding it
+	// I don't want `range pathConsiderationQueue` here because I'm going to be expanding it
 	// so I want to check len() each time
-	for queueIdx := 0; queueIdx < len(traversalQueue); queueIdx++ {
-		nct := traversalQueue[queueIdx]
-		seenNodeCollections[nct.end] = 1
+	for queueIdx := 0; queueIdx < len(pathConsiderationQueue); queueIdx++ {
+		currentPath := pathConsiderationQueue[queueIdx]
+		seenNodes[currentPath.end] = 1
 
-		leftNC := nct.end.left(n)
-		leftTraversal := addGhostNode(nct, leftNC, leftBool)
+		leftNode := currentPath.end.left(n)
+		leftPath := addGhostNode(currentPath, leftNode, leftBool)
 
-		// if we've seen this GhostNode before, then we've completed a cycle
+		rightNode := currentPath.end.right(n)
+		rightPath := addGhostNode(currentPath, rightNode, rightBool)
+
+		// if we've seen this GhostNode before, then we've completed a path
 		// add this traversal to output
-		if seenNodeCollections[leftNC] > 0 {
-			out = append(out, leftTraversal)
+		if seenNodes[leftNode] > 0 {
+			out = append(out, leftPath)
 		} else {
 			// add to queue
-			traversalQueue = append(traversalQueue, leftTraversal)
+			pathConsiderationQueue = append(pathConsiderationQueue, leftPath)
 		}
 
-		rightNC := traversalQueue[queueIdx].end.right(n)
-		rightTraversal := addGhostNode(nct, rightNC, rightBool)
-
-		if seenNodeCollections[rightNC] > 0 {
-			out = append(out, rightTraversal)
+		if seenNodes[rightNode] > 0 {
+			out = append(out, rightPath)
 		} else {
-			traversalQueue = append(traversalQueue, rightTraversal)
+			pathConsiderationQueue = append(pathConsiderationQueue, rightPath)
 		}
 	}
 
 	return
 }
 
-func parseInput(lines []string) (moves []bool, n NodeMap, startNodes GhostNode) {
+func parseInput(lines []string) (moves []bool, n NodeMap, start GhostNode) {
 	for _, char := range lines[0] {
 		moves = append(moves, char == leftChar)
 	}
 
 	n = make(NodeMap)
-	startSlice := make([]Node, 0, nodesInCollection)
+	startSlice := make([]Node, 0, numGhosts)
 	for _, line := range lines[2:] {
 		node := parseNode(line)
-		if node.endsWith == startCollectionRune {
+		if node.endsWith == startRune {
 			startSlice = append(startSlice, node)
 		}
 		n[node.id] = node
 	}
 	slices.SortFunc(startSlice, nodeSliceComparator)
-	copy(startNodes[:], startSlice)
-	return moves, n, startNodes
+	copy(start[:], startSlice)
+	return moves, n, start
 }
 
 func Part2(lines []string) int {
-	_, n, startNodes := parseInput(lines)
+	_, n, start := parseInput(lines)
 
-	ts := enumeratePaths(n, startNodes)
-	for _, t := range ts {
-		fmt.Println(t)
-	}
 	// idea1: enumerate all of the possible outcomes (R, L, RR, RL, LR, LL, etc) and find the first that gets to all Z?
+	paths := enumeratePaths(n, start)
+	for _, p := range paths {
+		fmt.Println(p)
+	}
 
 	// idea2: find all paths from A^6 to Z^6, and all cycles from A^6 and Z^6 back to themselves
 
