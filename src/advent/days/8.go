@@ -66,11 +66,12 @@ func day8part1(moves []bool, n NodeMap) (moveCount int) {
 }
 
 func main() {
-	lines := util.ReadInput("input", "8")
-	moves, nodeMap := parseInput(lines)
+	lines1 := util.ReadInput("test", "8")
+	moves, nodeMap := parseInput(lines1)
 	result := day8part1(moves, nodeMap)
 	fmt.Println("Part1", result)
 
-	result2 := day8.Part2(lines)
+	lines2 := util.ReadInput("test", "8b")
+	result2 := day8.Part2(lines2)
 	fmt.Println("Part2", result2)
 }
