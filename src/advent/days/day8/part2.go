@@ -136,6 +136,28 @@ func enumeratePaths(m NodeMap, start GhostNode) (cycles, winners []GhostPath) {
 	return
 }
 
+func findWinner(p GhostPath, m NodeMap) (winner GhostPath, success bool) {
+	if p.winner {
+		return p, true
+	} else if p.cycle {
+		return p, false
+	} else {
+		leftPath, lWinner := findWinner(addGhostNode(p, p.end.left(m), "L", m), m)
+		if lWinner {
+			return leftPath, true
+		}
+		// if this completes, we're done regardless of whether there was a winner
+		return findWinner(addGhostNode(p, p.end.right(m), "R", m), m)
+	}
+}
+
+func findWinningPath(start GhostNode, m NodeMap) (winner GhostPath, success bool) {
+	initSeen := make(map[GhostNode]int)
+	initSeen[start] = 1
+	initPath := GhostPath{seen: initSeen, start: start, end: start}
+	return findWinner(initPath, m)
+}
+
 // CCC = (ZZZ, GGG)
 func parseNode(line string) Node {
 	split1 := strings.Split(line, "=")
@@ -168,7 +190,7 @@ func parseInput(lines []string) (moves []bool, m NodeMap, start GhostNode) {
 }
 
 func Part2(lines []string) int {
-	_, n, start := parseInput(lines)
+	_, m, start := parseInput(lines)
 
 	// idea1: enumerate all of the possible outcomes (R, L, RR, RL, LR, LL, etc) and find the first that gets to all Z?
 
@@ -176,15 +198,19 @@ func Part2(lines []string) int {
 
 	// idea3: include the history of "seen" nodes in a sequence so they can find cycles
 
-	cycles, winners := enumeratePaths(n, start)
-	fmt.Println("Winners:", len(winners))
-	for _, p := range winners {
-		fmt.Println(p)
-	}
-	fmt.Println("Cycles:", len(cycles))
+	//cycles, winners := enumeratePaths(m, start)
+	//fmt.Println("Winners:", len(winners))
+	//for _, p := range winners {
+	//	fmt.Println(p)
+	//}
+	//fmt.Println("Cycles:", len(cycles))
 	//for _, p := range cycles {
 	//	fmt.Println(p)
 	//}
 
+	winner, success := findWinningPath(start, m)
+	if success {
+		fmt.Println("Winner:", winner)
+	}
 	return 0
 }
