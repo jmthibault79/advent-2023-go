@@ -1,6 +1,7 @@
 package day8
 
 import (
+	"advent/util"
 	"fmt"
 	"strings"
 )
@@ -9,6 +10,9 @@ const lastCharPos = 2
 const startRune = 'A'
 const targetRune = 'Z'
 const leftChar = 'L'
+
+// how many times should we cycle through before we're convinced the result is periodic?
+const periodicConfirmation = 3
 
 type Node struct {
 	id       string
@@ -47,11 +51,13 @@ func (p Path) maxTargetCount() (maxCount int) {
 	return
 }
 
-func (p Path) printPeriodicTargetInfo() {
-	lastStep := 0
-	for _, step := range p.targetSteps {
-		fmt.Println("Saw target", p.targetAtStep[step], "at step", step, "which was", step-lastStep, "since the last")
-		lastStep = step
+func (p Path) getPeriod() (period int) {
+	period = p.targetSteps[0]
+	for idx := 1; idx > len(p.targetSteps); idx++ {
+		thisPeriod := p.targetSteps[idx] - p.targetSteps[idx-1]
+		if thisPeriod != period {
+			panic("not periodic!")
+		}
 	}
 	return
 }
@@ -97,16 +103,14 @@ func addNode(p Path, n *Node, direction string) (out Path) {
 		targetSteps: targetSteps, targetAtStep: targetAtStep, targetCounts: targetCounts}
 }
 
-func findWinningPaths(startNodes []Node, m NodeMap, moves string) (paths []Path) {
-	untilTargetCount := 5
-
+func findPaths(startNodes []Node, m NodeMap, moves string) (paths []Path) {
 	//	n := startNodes[0]
 	for _, n := range startNodes {
 		initSeen := make(map[string]int)
 		initSeen[n.id] = 1
 		path := Path{seen: initSeen, start: n.id, end: n.id}
 		movIdx := 0
-		for path.maxTargetCount() < untilTargetCount {
+		for path.maxTargetCount() < periodicConfirmation {
 			if moves[movIdx%len(moves)] == leftChar {
 				path = addNode(path, m[m[path.end].left], "L")
 			} else {
@@ -114,7 +118,6 @@ func findWinningPaths(startNodes []Node, m NodeMap, moves string) (paths []Path)
 			}
 			movIdx++
 		}
-		path.printPeriodicTargetInfo()
 		paths = append(paths, path)
 	}
 
@@ -148,10 +151,12 @@ func parseInput(lines []string) (moves string, m NodeMap, startNodes []Node) {
 
 func Part2(lines []string) int {
 	moves, m, startNodes := parseInput(lines)
-	paths := findWinningPaths(startNodes, m, moves)
-	fmt.Println("Winning Paths")
+	paths := findPaths(startNodes, m, moves)
+	periods := make([]int, 0)
 	for _, path := range paths {
-		fmt.Println(path)
+		period := path.getPeriod()
+		periods = append(periods, period)
+		fmt.Println(path.start, "with period", period)
 	}
-	return 0
+	return util.LCM(periods)
 }

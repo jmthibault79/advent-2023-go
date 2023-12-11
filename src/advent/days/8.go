@@ -71,7 +71,7 @@ func main() {
 	result := day8part1(moves, nodeMap)
 	fmt.Println("Part1", result)
 
-	//	lines2 := util.ReadInput("test", "8b")
+	//lines2 := util.ReadInput("test", "8b")
 	lines2 := util.ReadInput("input", "8")
 	result2 := day8.Part2(lines2)
 	fmt.Println("Part2", result2)
