@@ -66,69 +66,56 @@ func addNode(p Path, n *Node, direction string) (out Path) {
 	return Path{seen: seen, start: p.start, end: n.id, steps: steps, cycle: cycle, targetSteps: targetSteps}
 }
 
-//
-//func enumeratePaths(m NodeMap, start GhostNode) (cycles, winners []GhostPath) {
-//	// init path queue with path at the start with 0 steps
-//	initSeen := make(map[GhostNode]int)
-//	initSeen[start] = 1
-//	pathConsiderationQueue := []GhostPath{{seen: initSeen, start: start, end: start}}
-//
-//	// I don't want `range pathConsiderationQueue` here because I'm going to be expanding it
-//	// so I want to check len() each time
-//	for queueIdx := 0; queueIdx < len(pathConsiderationQueue); queueIdx++ {
-//		if queueIdx%1_000_000 == 0 {
-//			fmt.Println("idx ", queueIdx, " len ", len(pathConsiderationQueue))
-//		}
-//		currentPath := pathConsiderationQueue[queueIdx]
-//		leftPath := addGhostNode(currentPath, currentPath.end.left(m), "L", m)
-//		rightPath := addGhostNode(currentPath, currentPath.end.right(m), "R", m)
-//
-//		// attempt to help the garbage collector by removing something we don't need
-//		pathConsiderationQueue[queueIdx] = GhostPath{}
-//
-//		for _, p := range []GhostPath{leftPath, rightPath} {
-//			if p.winner {
-//				fmt.Println("Winner", p)
-//				winners = append(winners, p)
-//			} else if p.cycle {
-//				if len(cycles)%100 == 0 {
-//					fmt.Println("Cycles", len(cycles))
-//				}
-//				cycles = append(cycles, p)
-//			} else {
-//				// add to queue
-//				pathConsiderationQueue = append(pathConsiderationQueue, p)
-//			}
-//		}
+//func findWinnersDFS(p Path, m NodeMap) (winners []Path) {
+//	if len(p.steps) > 20 {
+//		fmt.Println("steps", p.steps)
 //	}
-//
-//	return
+//	if p.cycle {
+//		if len(p.targetSteps) > 0 {
+//			return []Path{p}
+//		} else {
+//			return nil
+//		}
+//	} else {
+//		leftWinners := findWinnersDFS(addNode(p, m[m[p.end].left], "L"), m)
+//		winners = append(winners, leftWinners...)
+//		rightWinners := findWinnersDFS(addNode(p, m[m[p.end].right], "R"), m)
+//		winners = append(winners, rightWinners...)
+//		return
+//	}
 //}
 
-func findWinners(p Path, m NodeMap) (winners []Path) {
-	if p.cycle {
-		if len(p.targetSteps) > 0 {
-			return []Path{p}
-		} else {
-			return nil
+func findWinnersBFS(pathQueue []Path, m NodeMap) (winners []Path) {
+	for queueIdx := 0; queueIdx < len(pathQueue); queueIdx++ {
+		if queueIdx%1_000_00 == 0 {
+			fmt.Println("idx ", queueIdx, " len ", len(pathQueue))
 		}
-	} else {
-		leftWinners := findWinners(addNode(p, m[m[p.end].left], "L"), m)
-		winners = append(winners, leftWinners...)
-		rightWinners := findWinners(addNode(p, m[m[p.end].right], "R"), m)
-		winners = append(winners, rightWinners...)
-		return
+		p := pathQueue[queueIdx]
+		//if len(p.steps) > 20 {
+		//	fmt.Println("steps", p.steps)
+		//}
+
+		if p.cycle {
+			if len(p.targetSteps) > 0 {
+				winners = append(winners, p)
+			}
+		} else {
+			leftPath := addNode(p, m[m[p.end].left], "L")
+			rightPath := addNode(p, m[m[p.end].right], "R")
+			pathQueue = append(pathQueue, leftPath, rightPath)
+		}
 	}
+	return
 }
 
 func findWinningPaths(startNodes []Node, m NodeMap) (allWinners []Path) {
-	//	n := startNodes[0]
-	for _, n := range startNodes {
-		initSeen := make(map[string]int)
-		initSeen[n.id] = 1
-		initPath := Path{seen: initSeen, start: n.id, end: n.id}
-		allWinners = append(allWinners, findWinners(initPath, m)...)
-	}
+	n := startNodes[0]
+	//for _, n := range startNodes {
+	initSeen := make(map[string]int)
+	initSeen[n.id] = 1
+	initPath := Path{seen: initSeen, start: n.id, end: n.id}
+	allWinners = append(allWinners, findWinnersBFS([]Path{initPath}, m)...)
+	//}
 	return
 }
 
