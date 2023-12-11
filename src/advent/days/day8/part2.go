@@ -24,7 +24,7 @@ func (n Node) String() string {
 type NodeMap map[string]*Node
 
 type Path struct {
-	seen        map[*Node]int
+	seen        map[string]int
 	start       string
 	end         string
 	steps       string
@@ -40,7 +40,7 @@ func addNode(p Path, n *Node, direction string) (out Path) {
 
 	// init
 
-	seen := make(map[*Node]int)
+	seen := make(map[string]int)
 	steps := p.steps + direction
 	cycle := false
 	targetSteps := make(map[string]int)
@@ -54,14 +54,14 @@ func addNode(p Path, n *Node, direction string) (out Path) {
 		targetSteps[n.id] = len(p.steps)
 	}
 
-	if p.seen[n] > 0 {
+	if p.seen[n.id] > 0 {
 		cycle = true
 	} else {
 		// copy seen map - looks like there are reference problems if you don't
 		for k, v := range p.seen {
 			seen[k] = v
 		}
-		seen[n] = 1
+		seen[n.id] = 1
 	}
 	return Path{seen: seen, start: p.start, end: n.id, steps: steps, cycle: cycle, targetSteps: targetSteps}
 }
@@ -105,34 +105,31 @@ func addNode(p Path, n *Node, direction string) (out Path) {
 //	return
 //}
 
-func findWinners(p Path, m NodeMap) (winners []Path, success bool) {
+func findWinners(p Path, m NodeMap) (winners []Path) {
 	if p.cycle {
-		return []Path{p}, len(p.targetSteps) > 0
+		if len(p.targetSteps) > 0 {
+			return []Path{p}
+		} else {
+			return nil
+		}
 	} else {
-		leftWinners, lSuccess := findWinners(addNode(p, m[m[p.end].left], "L"), m)
-		if lSuccess {
-			winners = append(winners, leftWinners...)
-		}
-		rightWinners, rSuccess := findWinners(addNode(p, m[m[p.end].right], "R"), m)
-		if rSuccess {
-			winners = append(winners, rightWinners...)
-		}
-		return winners, lSuccess || rSuccess
+		leftWinners := findWinners(addNode(p, m[m[p.end].left], "L"), m)
+		winners = append(winners, leftWinners...)
+		rightWinners := findWinners(addNode(p, m[m[p.end].right], "R"), m)
+		winners = append(winners, rightWinners...)
+		return
 	}
 }
 
-func findWinningPaths(startNodes []Node, m NodeMap) (allWinners []Path, allSuccess bool) {
+func findWinningPaths(startNodes []Node, m NodeMap) (allWinners []Path) {
+	//	n := startNodes[0]
 	for _, n := range startNodes {
-		initSeen := make(map[*Node]int)
-		initSeen[&n] = 1
+		initSeen := make(map[string]int)
+		initSeen[n.id] = 1
 		initPath := Path{seen: initSeen, start: n.id, end: n.id}
-		winners, success := findWinners(initPath, m)
-		if success {
-			allWinners = append(allWinners, winners...)
-			allSuccess = true
-		}
+		allWinners = append(allWinners, findWinners(initPath, m)...)
 	}
-	return allWinners, allSuccess
+	return
 }
 
 // CCC = (ZZZ, GGG)
@@ -183,11 +180,12 @@ func Part2(lines []string) int {
 	//}
 
 	_, m, startNodes := parseInput(lines)
-	winners, success := findWinningPaths(startNodes, m)
-	if success {
-		for _, winner := range winners {
-			fmt.Println("Winner:", winner)
-		}
+	winners := findWinningPaths(startNodes, m)
+	if len(winners) == 0 {
+		fmt.Println("No Winners")
+	}
+	for _, winner := range winners {
+		fmt.Println("Winner:", winner)
 	}
 	return 0
 }
