@@ -140,7 +140,7 @@ func nextStep(fromPoint MapPoint, pipeMap []string) MapPoint {
 	panic("no path for snek")
 }
 
-func day10part1(pipeMap []string) (out int) {
+func findSnek(pipeMap []string) MapPoint {
 	// ok first find that S
 	Sx, Sy := -1, -1
 snekloop:
@@ -153,7 +153,11 @@ snekloop:
 		}
 	}
 
-	snekPoint := MapPoint{x: Sx, y: Sy, value: snek}
+	return MapPoint{x: Sx, y: Sy, value: snek}
+}
+
+func findPath(pipeMap []string) []MapPoint {
+	snekPoint := findSnek(pipeMap)
 	pipePath := []MapPoint{snekPoint}
 
 	// assumption: there won't be any compatible but false steps
@@ -164,19 +168,101 @@ snekloop:
 		step = nextStep(step, pipeMap)
 		pipePath = append(pipePath, step)
 	}
+	return pipePath
+}
 
+func day10part1(pipeMap []string) (out int) {
+	pipePath := findPath(pipeMap)
 	for _, point := range pipePath {
 		fmt.Println(point)
 	}
 	return len(pipePath) / 2
 }
 
+// replace the S to help with in/out calculations
+// we need the stepToGetHere from the step-after-snek as well as the final step
+// example: afterSnek.sTGH = south, snek2.sTGH = west -> southeast
+func replaceSnek(pipePath []MapPoint) []MapPoint {
+	afterSnek, snek2 := pipePath[1], pipePath[len(pipePath)-1]
+	var newChar uint8
+	switch afterSnek.stepToGetHere {
+	case south:
+		switch snek2.stepToGetHere {
+		case south:
+			newChar = ns
+		case east:
+			newChar = sw
+		case west:
+			newChar = se
+		}
+	case north:
+		switch snek2.stepToGetHere {
+		case north:
+			newChar = ns
+		case east:
+			newChar = nw
+		case west:
+			newChar = ne
+		}
+	case east:
+		switch snek2.stepToGetHere {
+		case east:
+			newChar = ew
+		case north:
+			newChar = sw
+		case south:
+			newChar = nw
+		}
+	case west:
+		switch snek2.stepToGetHere {
+		case west:
+			newChar = ew
+		case north:
+			newChar = se
+		case south:
+			newChar = ne
+		}
+	}
+
+	pipePath[0] = MapPoint{x: snek2.x, y: snek2.y, value: newChar, stepToGetHere: snek2.stepToGetHere}
+	return pipePath
+}
+
+func makePathMap(pipePath []MapPoint) map[int]map[int]MapPoint {
+	pathMapYX := make(map[int]map[int]MapPoint)
+	for _, point := range pipePath {
+		if pathMapYX[point.y] == nil {
+			pathMapYX[point.y] = make(map[int]MapPoint)
+		}
+		pathMapYX[point.y][point.x] = point
+	}
+	return pathMapYX
+}
+
+func day10part2(pipeMap []string) (insideCount int) {
+	pipePath := replaceSnek(findPath(pipeMap))
+	pathMapYX := makePathMap(pipePath)
+
+	for y, line := range pipeMap {
+		inside := false
+		for x, char := range line {
+
+			uh now what
+
+
+
+		}
+
+	}
+	return
+}
+
 func main() {
 	pipeMap := util.ReadInput("input", "10")
 	result := day10part1(pipeMap)
 	fmt.Println("Part1", result)
-	//
-	//pipeMap = util.ReadInput("test", "10b")
-	//result = day10part1(pipeMap)
-	//fmt.Println("Part1b", result)
+
+	pipeMap = util.ReadInput("test", "10_2a")
+	result = day10part2(pipeMap)
+	fmt.Println("Part2", result)
 }
