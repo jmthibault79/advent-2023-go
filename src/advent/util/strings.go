@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-func ParseSpacedInts(line string) (out []int, err error) {
-	strVals := strings.Fields(line)
+func ParseSpacedInts(str string) (out []int, err error) {
+	strVals := strings.Fields(str)
 	for _, sVal := range strVals {
 		if sVal != " " {
 			iVal, err := strconv.Atoi(sVal)
@@ -17,6 +17,10 @@ func ParseSpacedInts(line string) (out []int, err error) {
 		}
 	}
 	return out, nil
+}
+
+func ParseSeparatedInts(str, sep string) (out []int, err error) {
+	return ParseSpacedInts(strings.ReplaceAll(str, sep, " "))
 }
 
 func IntsToString(in []int) string {
