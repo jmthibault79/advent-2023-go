@@ -3,7 +3,6 @@ package main
 import (
 	"advent/util"
 	"fmt"
-	"math"
 	"strings"
 )
 
@@ -11,7 +10,7 @@ const operational = '.'
 const damaged = '#'
 const unknown = '?'
 
-func splitByOperational(in string) (out []string, unknowns int) {
+func splitByOperational(in string) (out []string) {
 	// runs of operational are equivalent to 1 - split on these
 	var b strings.Builder
 	for _, char := range in {
@@ -22,9 +21,6 @@ func splitByOperational(in string) (out []string, unknowns int) {
 				b.Reset()
 			}
 		} else {
-			if char == unknown {
-				unknowns++
-			}
 			b.WriteString(string(char))
 		}
 	}
@@ -37,115 +33,74 @@ func splitByOperational(in string) (out []string, unknowns int) {
 	return
 }
 
-// assume our springsLen is 3 (???, ?##, etc)
-// groupLength 1 -> 3 ways
-// groupLength 2 -> 2 ways
-// groupLength 3 -> 1 ways
-// groupLength 4 -> 0 ways
-func groupInOneString(springsLen int, damagedGroupLen int) int {
-	return int(math.Max(0, float64(springsLen-damagedGroupLen+1)))
-}
-
-// 1,2,3 -> len(#.##.###)
-func minMatchLength(damagedGroups []int) (out int) {
-	out = damagedGroups[0]
-	for _, group := range damagedGroups[1:] {
-		out += 1 + group
+func splitAllByOperational(in []string) (out [][]int) {
+	for _, springs := range in {
+		split := splitByOperational(springs)
+		counts := make([]int, 0)
+		for _, segment := range split {
+			counts = append(counts, len(segment))
+		}
+		out = append(out, counts)
 	}
 	return
 }
 
-func manyGroupsOneString(springs string, damagedGroups []int) (matches int) {
-	if len(damagedGroups) == 1 {
-		return groupInOneString(len(springs), damagedGroups[0])
-	}
-
-	if len(damagedGroups) == 0 || minMatchLength(damagedGroups) > len(springs) {
-		return 0
-	}
-
-	// can we match the first plus a gap?
-	// before the gap, we always match because it's damaged or unknown
-	firstDamagedGap := damagedGroups[0]
-	if springs[firstDamagedGap] == damaged {
-		// not a match - let's try again starting from the next position
-		return manyGroupsOneString(springs[1:], damagedGroups)
-	} else {
-		// a match!  Do we still match if we check what's left?
-		matches = manyGroupsOneString(springs[firstDamagedGap+1:], damagedGroups[1:])
-		// we may also match if we shift by one, but not if that would cause us to split a damaged section
-		if springs[0] == unknown {
-			matches += manyGroupsOneString(springs[1:], damagedGroups)
+func generateAll(springs string) (allPossible []string) {
+	var s strings.Builder
+	for idx, char := range springs {
+		if char == unknown {
+			damagedPrefix := s.String() + string(damaged)
+			operationalPrefix := s.String() + string(operational)
+			nextCharIdx := idx + 1
+			if nextCharIdx == len(springs) {
+				// there are no more chars
+				return []string{damagedPrefix, operationalPrefix}
+			} else {
+				allPossibleRest := generateAll(springs[nextCharIdx:])
+				allPossible = make([]string, len(allPossibleRest)*2)
+				for restIdx, restString := range allPossibleRest {
+					allPossible[restIdx] = damagedPrefix + restString
+					allPossible[restIdx+len(allPossibleRest)] = operationalPrefix + restString
+				}
+				return allPossible
+			}
+		} else {
+			s.WriteString(string(char))
 		}
-		return
 	}
+
+	// if we have reached here, we have a single unambiguous string.
+	return []string{s.String()}
 }
 
-func oneRow(splitSprings []string, damagedGroups []int) (total int) {
-	// general idea for approach: divide and conquer
-	// if we can match the beginning and/or the end, we have a smaller problem?
-
-	// assert impossibilities
-	if len(splitSprings) == 0 {
-		panic("0 splits")
-	} else if len(damagedGroups) == 0 {
-		panic("0 damagedGroups")
-	} else if len(splitSprings) > len(damagedGroups) {
-		// nope, need to handle this.  example: ??,?#??,???? vs. 4,1
-		panic(fmt.Sprintf("Springs split into %d damagedGroups but we were given %d",
-			len(splitSprings), len(damagedGroups)))
+func matches(allCounts [][]int, groups []int) (total int) {
+	for _, counts := range allCounts {
+		if len(counts) == len(groups) {
+			match := true
+			for idx, count := range counts {
+				if count != groups[idx] {
+					match = false
+				}
+			}
+			if match {
+				total++
+			}
+		}
 	}
-
-	// this is also not necessarily correct
-	// consider ?,???,? vs. 1,1,1
-	if len(splitSprings) == len(damagedGroups) {
-		// match each separately, and multiply the results
-		acc := groupInOneString(len(splitSprings[0]), damagedGroups[0])
-		for idx := 1; idx < len(splitSprings); idx++ {
-			acc *= groupInOneString(len(splitSprings[idx]), damagedGroups[idx])
-		}
-		return acc
-	} else if len(splitSprings) == 1 {
-		return manyGroupsOneString(splitSprings[0], damagedGroups)
-	} else {
-		firstSplit, firstGroup := splitSprings[0], damagedGroups[0]
-		lastSplit, lastGroup := splitSprings[len(splitSprings)-1], damagedGroups[len(damagedGroups)-1]
-
-		// if the first of each or last of each has matching length, we can use that
-		if len(firstSplit) == firstGroup {
-			firstMatches := groupInOneString(len(firstSplit), firstGroup)
-			restMatches := oneRow(splitSprings[1:], damagedGroups[1:])
-			return firstMatches * restMatches
-		}
-		if len(lastSplit) == lastGroup {
-			lastMatches := groupInOneString(len(lastSplit), lastGroup)
-			restMatches := oneRow(splitSprings[:len(splitSprings)-1], damagedGroups[:len(damagedGroups)-1])
-			return lastMatches * restMatches
-		}
-
-		// are there cases beyond these?
-		// yes.
-		// example: ?#?, ?#?#????????#? vs. 2,4,4,3
-		return 0
-	}
+	return
 }
 
 func day12part1(rows []string) (total int) {
 	for _, row := range rows {
 		split := strings.Fields(row)
 
-		unknowns := 0
-		maxUnknowns := 0
-		// what spring divisions do we have in our input string?
-		splitSprings, rowUnknowns := splitByOperational(split[0])
-		unknowns += rowUnknowns
-		maxUnknowns = util.MaxInt(maxUnknowns, rowUnknowns)
-
 		damagedGroups, err := util.ParseSeparatedInts(split[1], ",")
 		util.MaybePanic(err)
 
-		// rows are independent so here's where all the logic is
-		rowMatches := oneRow(splitSprings, damagedGroups)
+		allPossible := generateAll(split[0])
+		allSplitCounts := splitAllByOperational(allPossible)
+
+		rowMatches := matches(allSplitCounts, damagedGroups)
 		total += rowMatches
 	}
 	return
