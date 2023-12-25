@@ -1,5 +1,7 @@
 package util
 
+import "math"
+
 // Greatest Common Divisor
 // https://en.wikipedia.org/wiki/Greatest_common_divisor#Euclid's_algorithm
 func GCD2(a, b int) int {
@@ -50,4 +52,9 @@ func LCM(nums []int) int {
 	default:
 		return LCM2(nums[0], LCM(nums[1:]))
 	}
+}
+
+// wrapper for the dumb types of math.Max
+func MaxInt(a, b int) (max int) {
+	return int(math.Max(float64(a), float64(b)))
 }

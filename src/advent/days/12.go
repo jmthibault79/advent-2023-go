@@ -11,7 +11,7 @@ const operational = '.'
 const damaged = '#'
 const unknown = '?'
 
-func splitByOperational(in string) (out []string) {
+func splitByOperational(in string) (out []string, unknowns int) {
 	// runs of operational are equivalent to 1 - split on these
 	var b strings.Builder
 	for _, char := range in {
@@ -22,6 +22,9 @@ func splitByOperational(in string) (out []string) {
 				b.Reset()
 			}
 		} else {
+			if char == unknown {
+				unknowns++
+			}
 			b.WriteString(string(char))
 		}
 	}
@@ -88,10 +91,13 @@ func oneRow(splitSprings []string, damagedGroups []int) (total int) {
 	} else if len(damagedGroups) == 0 {
 		panic("0 damagedGroups")
 	} else if len(splitSprings) > len(damagedGroups) {
+		// nope, need to handle this.  example: ??,?#??,???? vs. 4,1
 		panic(fmt.Sprintf("Springs split into %d damagedGroups but we were given %d",
 			len(splitSprings), len(damagedGroups)))
 	}
 
+	// this is also not necessarily correct
+	// consider ?,???,? vs. 1,1,1
 	if len(splitSprings) == len(damagedGroups) {
 		// match each separately, and multiply the results
 		acc := groupInOneString(len(splitSprings[0]), damagedGroups[0])
@@ -118,15 +124,22 @@ func oneRow(splitSprings []string, damagedGroups []int) (total int) {
 		}
 
 		// are there cases beyond these?
-		return -1
+		// yes.
+		// example: ?#?, ?#?#????????#? vs. 2,4,4,3
+		return 0
 	}
 }
 
 func day12part1(rows []string) (total int) {
 	for _, row := range rows {
 		split := strings.Fields(row)
+
+		unknowns := 0
+		maxUnknowns := 0
 		// what spring divisions do we have in our input string?
-		splitSprings := splitByOperational(split[0])
+		splitSprings, rowUnknowns := splitByOperational(split[0])
+		unknowns += rowUnknowns
+		maxUnknowns = util.MaxInt(maxUnknowns, rowUnknowns)
 
 		damagedGroups, err := util.ParseSeparatedInts(split[1], ",")
 		util.MaybePanic(err)
@@ -139,7 +152,7 @@ func day12part1(rows []string) (total int) {
 }
 
 func main() {
-	rows := util.ReadInput("test", "12")
+	rows := util.ReadInput("input", "12")
 	result := day12part1(rows)
 	fmt.Println("Part1", result)
 }
