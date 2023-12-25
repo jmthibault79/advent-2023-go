@@ -52,7 +52,7 @@ func minMatchLength(damagedGroups []int) (out int) {
 	return
 }
 
-func manyGroupsOneString(springs string, damagedGroups []int) int {
+func manyGroupsOneString(springs string, damagedGroups []int) (matches int) {
 	if len(damagedGroups) == 1 {
 		return groupInOneString(len(springs), damagedGroups[0])
 	}
@@ -69,10 +69,12 @@ func manyGroupsOneString(springs string, damagedGroups []int) int {
 		return manyGroupsOneString(springs[1:], damagedGroups)
 	} else {
 		// a match!  Do we still match if we check what's left?
-		subMatches := manyGroupsOneString(springs[firstDamagedGap+1:], damagedGroups[1:])
-		// add that to what happens if we shift this by one
-		shiftMatches := manyGroupsOneString(springs[1:], damagedGroups)
-		return subMatches + shiftMatches
+		matches = manyGroupsOneString(springs[firstDamagedGap+1:], damagedGroups[1:])
+		// we may also match if we shift by one, but not if that would cause us to split a damaged section
+		if springs[0] == unknown {
+			matches += manyGroupsOneString(springs[1:], damagedGroups)
+		}
+		return
 	}
 }
 
